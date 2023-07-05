@@ -188,3 +188,48 @@ FROM cte2
 WHERE order_date < '2021-01-31'
 GROUP BY customer_id;
 
+-- BONUS
+
+-- join all
+SELECT
+    sales.customer_id,
+    sales.order_date,
+    menu.product_name,
+    menu.price,
+    CASE
+    WHEN sales.order_date >= members.join_date THEN 'Y'
+    ELSE 'N' END AS member
+FROM sales
+INNER JOIN menu
+ON sales.product_id = menu.product_id
+LEFT JOIN members
+ON sales.customer_id = members.customer_id
+ORDER BY customer_id, order_date, product_name
+
+-- rank all
+WITH cte AS(
+    SELECT
+    sales.customer_id,
+    sales.order_date,
+    menu.product_name,
+    menu.price,
+    CASE
+    WHEN sales.order_date >= members.join_date THEN 'Y'
+    ELSE 'N' END AS member
+FROM sales
+INNER JOIN menu
+ON sales.product_id = menu.product_id
+LEFT JOIN members
+ON sales.customer_id = members.customer_id
+)
+SELECT
+    *,
+    CASE
+    WHEN member = 'N' THEN NULL
+    ELSE DENSE_RANK() OVER(
+    PARTITION BY customer_id,member
+    ORDER BY order_date
+    )
+    END AS rank
+FROM cte
+
